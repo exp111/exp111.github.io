@@ -75,6 +75,7 @@ a {
   &:hover, &:active {
     color: $blue;
   }
+  transition: 0.3s;
 }
 
 ul, ol {
