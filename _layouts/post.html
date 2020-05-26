@@ -9,9 +9,10 @@ layout: default
     {{ content }}
   </div>
 
-  <div class="date">
+  <div class="info">
+    Categories: {{ page.categories }}
+  </div>
+  <div class="info">
     Written on {{ page.date | date: "%e %B %Y" }}
   </div>
-
-  {% include disqus.html %}
 </article>
