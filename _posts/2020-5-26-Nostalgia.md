@@ -59,7 +59,7 @@ Go into Ghidra, "File" > "Install Extensions..." and select the zip.
 If it doesn't work use google, I don't know how I fixed anything.
 
 Okay back to mGBA.
-The controls are written in the man page (RTFM), but here they are too (GBA Button = Key):
+The controls are written in the man page ([RTFM](https://xkcd.com/293/)), but here they are too (GBA Button = Key):
 
 * A = x
 * B = z
@@ -83,7 +83,7 @@ Okay the input get printed out to screen. Seems like we need to get the right co
 
 We can't input anymore than 8 buttons, pressing Start does nothing and Select resets it. We could try to brute force it, but where is the fun in that...
 
-## Time to look what's under the hood or
+## Time to look what's under the hood or:
 ### The nerdy fun stuff
 
 Boot up Ghidra and import the .gba file.
@@ -99,9 +99,9 @@ void _entry(void)
   return;
 }
 ```
-The entry point seems pretty wonky and that makes sense because it probably does some gba bootup stuff or ghidra doesn't recognize the right function. So let's take another approach:
+The entry point seems pretty wonky and that makes sense because it probably does some gba bootup stuff or ghidra doesn't recognize the right function. So let's take
 
-### 
+### Another approach
 We know that the "game" mainly reads out the input and I know that the key input is memory mapped (thanks to LiveOverflow's video).
 
 So let's take a look where this is saved. Google spits out the address 0x4000130 and GhidraGBA even labeled the address as KEYINPUT.  
