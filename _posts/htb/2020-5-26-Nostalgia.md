@@ -106,7 +106,8 @@ The entry point seems pretty wonky and that makes sense because it probably does
 We know that the "game" mainly reads out the input and I know that the key input is memory mapped (thanks to LiveOverflow's video).
 
 So let's take a look where this is saved. Google spits out the address 0x4000130 and GhidraGBA even labeled the address as KEYINPUT.  
-We even already can see two refs (and one is a pointer) `0x080015fa (R)` and `0x080017ac (*)`. Nice!
+We even already can see two refs (and one is a pointer) `0x080015fa (R)` and `0x080017ac (*)`. Nice!  
+Okay let's jump to 0x080015fa:
 
 ### One long ass function
 The pseudocode is about 150 lines long so let's look at it part-by-part:
