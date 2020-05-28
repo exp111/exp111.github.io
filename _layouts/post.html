@@ -11,7 +11,12 @@ layout: default
 
 {% if page.categories != empty %}
   <div class="info">
-    Categories: {{ page.categories }}
+    Categories: {{ page.categories | join: ", "}}
+  </div>
+{% endif %}
+{% if page.tags != empty %}
+  <div class="info">
+    Tags: {{ page.tags | join: ", "}}
   </div>
 {% endif %}
   <div class="info">

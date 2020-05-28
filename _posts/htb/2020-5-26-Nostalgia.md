@@ -1,7 +1,8 @@
 ---
 layout: post
 title: HTB - Nostalgia
-category: HTB
+categories: HTB Reversing
+tags: Ghidra GBA
 ---
 
 ## Foreword
@@ -90,7 +91,7 @@ We can't input anymore than 8 buttons, pressing Start does nothing and Select re
 Boot up Ghidra and import the .gba file.
 If the installation of the extension worked it should be recognized as a GBA ROM.
 
-```C++
+```c++
 void _entry(void)
 {
   IME = 0x4000000;
@@ -112,7 +113,7 @@ Okay let's jump to 0x080015fa:
 ### One long ass function
 The pseudocode is about 150 lines long so let's look at it part-by-part:
 
-```C++
+```c++
 void ReadInput(void)
 {
   DISPCNT = 0x1140;
@@ -127,7 +128,7 @@ This is probably just some init stuff but nothing interesting right now, but on 
 DISPCNT is the Display Control Register of the GameBoy and just tells the display what you're about to do to it.
 
 ### Pressing Issue
-```C++
+```c++
 do {
   lastKeys = uVar3;
   activeKeys = KEYINPUT | 0xfc00;
@@ -147,7 +148,7 @@ Seems like we want to know if uVar4 was in lastKeys and not in the current keys,
 ### Know your enemy
 If we want to know which keys are pressed we probably need a enum right?
 Well here it is
-```C++
+```c++
 typedef enum KEYS
 {
   A       = (1 << 0),
@@ -163,7 +164,7 @@ typedef enum KEYS
 }
 ```
 Well that's nice to look at but I want the numbers mason...
-```C++
+```c++
 A = 1
 B = 2
 SELECT = 4
@@ -179,7 +180,7 @@ L = 256
 ### Button Events
 Okay now that's out of the way, it may get interesting.
 
-```C++
+```c++
 /* SELECT */
 if (uVar4 == 4) {
   inputCount = 0;
@@ -197,7 +198,7 @@ else {
 Okay SELECT resets a few values and that makes sense if it resets all input.Notable here are inputCount and incVal, but more on those later.
 
 ### The finish line?
-```C++
+```c++
   /* START */
   if (uVar4 == 8) {
     if (incVal == 0xf3) {
@@ -213,7 +214,7 @@ Okay SELECT resets a few values and that makes sense if it resets all input.Nota
 START is supposed to submit the code and it checks here a variable (incVal) and then does something. But how do we get incVal to 0xf3?
 
 ### Where it gets ugly
-```C++
+```c++
 if (inputCount < 8) {
   inputCount = inputCount + 1;
   FUN_08000864();
@@ -232,7 +233,7 @@ After that it gets fucky. Probably the decompilers fault, but many labels get in
 But hey, incVal get's increased by 0x3a when we press RIGHT. But that is not enough to get to our target of 0xf3...
 
 ### More buttons
-```C++
+```c++
 /* A */
 if (uVar4 == 1) {
   incVal = incVal + 3;
@@ -277,7 +278,7 @@ I noticed that I should probably make screenshots while doing the challenges and
 
 ## Bonus
 Here is the full pseudocode if you want to see that decompiled monster
-```C++
+```c++
 void ReadInput(void)
 {
   DISPCNT = 0x1140;
