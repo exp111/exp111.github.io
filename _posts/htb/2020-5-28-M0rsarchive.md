@@ -1,8 +1,8 @@
 ---
 layout: post
 title: HTB - M0rsarchive
-categories: HTB Misc
-tags: Python Morse WSL Bash
+categories: htb misc
+tags: python morse wsl bash
 ---
 
 ## Foreword

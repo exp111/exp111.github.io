@@ -4,7 +4,9 @@ layout: default
 
 <div class="posts">
     {% for post in site.posts %}
-      {% if post.categories contains page.filter %}
+      {% assign filter = page.filter | downcase %}
+      {% assign array = post.categories | join: ',' | downcase | split: ',' %}
+      {% if array contains filter %}
       <article class="post">
   
         <h1><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h1>

@@ -1,8 +1,8 @@
 ---
 layout: post
 title: HTB - Nostalgia
-categories: HTB Reversing
-tags: Ghidra GBA
+categories: htb reversing
+tags: ghidra gba
 ---
 
 ## Foreword

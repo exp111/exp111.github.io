@@ -1,4 +1,4 @@
 ---
 layout: category
-filter: HTB
+filter: htb
 ---
