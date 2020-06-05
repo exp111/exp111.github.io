@@ -29,12 +29,12 @@ Mhh seems like another passworded zip inside and the pwd.png should contain the 
 I recently did the Eternal Loop challenge in which you needed to unzip loop and unzip with the zip name. Maybe it's here the same?
 The name of the challenge suggests some morse encoding so let's look at the image:
 
-![First pwd.png]({{ site.baseurl }}/images/m0rsarchive/pwd1.png "First pwd")
+![First pwd.png]({{ site.baseurl }}/assets/images/m0rsarchive/pwd1.png "First pwd")
 
 That's uhhh.. tiny...
 Zoom! Enhance!
 
-![pwd.png but big]({{ site.baseurl }}/images/m0rsarchive/pwd1-big.png "pwd.png but big")
+![pwd.png but big]({{ site.baseurl }}/assets/images/m0rsarchive/pwd1-big.png "pwd.png but big")
 
 Okay that's better.
 Seems like the morse is written in the picture. Let's decode it (----.) and put it into [CyberChef](https://gchq.github.io/CyberChef/). It decodes to 9. I'll do it manually now...
@@ -53,7 +53,7 @@ Archive:  flag_999.zip
 
 Open up the pwd.png:
 
-![Second pwd.png]({{ site.baseurl }}/images/m0rsarchive/pwd2.png "Second pwd")
+![Second pwd.png]({{ site.baseurl }}/assets/images/m0rsarchive/pwd2.png "Second pwd")
 
 This time there are two rows. I'm now too lazy to write that down manually so we'll do it automatic.
 
@@ -188,7 +188,7 @@ After that I added the fail exit `if [ -z "$pw" ]` (checks if pw is empty) into 
 ### Second Mistake
 Then it went till 986.zip and the password was wrongly read.
 
-![pwd 986]({{ site.baseurl }}/images/m0rsarchive/pwd986.png "pwd 986")
+![pwd 986]({{ site.baseurl }}/assets/images/m0rsarchive/pwd986.png "pwd 986")
 
 My script read `JSZONJREP0FVVP` and the morse code was `.--- ... --.. --- -. .--- .-. . .--. ----- ..-. ...- ...- .--.` which should be decoded to the script output...
 So what went wrong?  

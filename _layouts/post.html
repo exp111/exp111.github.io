@@ -1,25 +1,48 @@
 ---
-layout: default
+layout: compress
 ---
 
-<article class="post">
-  <h1>{{ page.title }}</h1>
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "en" }}">
 
-  <div class="entry">
-    {{ content }}
-  </div>
+{% include header.html %}
 
-{% if page.categories != empty %}
-  <div class="info">
-    Categories: {{ page.categories | join: ", "}}
+<body>
+  {% include navbar.html %}
+  <div class="wrapper post">
+    <main class="page-content" aria-label="Content">
+
+        <header class="header">
+          {% if page.tags and page.tags != empty %}
+          <div class="tags">
+            {% assign tags = page.tags %}
+            <span itemprop="keywords">
+              {% for tag in tags %}
+              <a class="tag"
+                href="/tags/#{{tag | downcase | slugify}}">{{tag | upcase }}</a>{% unless forloop.last %},{% endunless %}
+              {% endfor %}
+            </span>
+          </div>
+          {% endif %}
+          <h1 class="header-title" itemprop="headline">{{ page.title | escape }}</h1>
+          {% if page.date %}
+          <div class="post-meta">
+            <time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
+              {{ page.date | date: "%b %d, %Y" }}
+            </time>
+          </div>
+          {% endif %}
+        </header>
+
+        <div class="page-content" itemprop="articleBody">
+          {% include anchor_headings.html html=content anchorClass="anchor-head" beforeHeading=true h_min=1 h_max=4 %}
+        </div>
+      </article>
+
+    </main>
+
+    {% include footer.html %}
   </div>
-{% endif %}
-{% if page.tags != empty %}
-  <div class="info">
-    Tags: {{ page.tags | join: ", "}}
-  </div>
-{% endif %}
-  <div class="info">
-    Written on {{ page.date | date: "%e %B %Y" }}
-  </div>
-</article>
+</body>
+
+</html>

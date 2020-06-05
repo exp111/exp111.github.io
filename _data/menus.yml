@@ -1,0 +1,19 @@
+- title: home
+  url: /
+  external: false
+
+- title: writeups
+  submenu:
+    - title: hackthebox
+      url: /htb/
+      external: false
+  external: false
+
+- title: about
+  url: /about/
+  external: false
+
+# Example:
+# - title: github
+#   url: https://github.com/piharpi/jekyll-klise
+#   external: true

@@ -1,0 +1,10 @@
+<head>
+  <title>
+    {% if page.title %}{{ page.title }} – {% endif %}{{ site.name }} – {{ site.description }}
+  </title>
+  
+  {% include meta.html %}
+
+  <script src="{{ site.baseurl }}/assets/js/main.js" defer="defer"></script>
+  <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/style.css" />
+</head>

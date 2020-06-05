@@ -74,13 +74,15 @@ The controls are written in the man page ([RTFM](https://xkcd.com/293/)), but he
 ## The fun stuff with fancy images
 
 Let's boot up the game with
->mgba Nostalgia.gba
+```
+mgba Nostalgia.gba
+```
 
 And the Hack The Box logo greets us in fancy pixel art:  
-![The startup screen]({{ site.baseurl }}/images/nostalgia/start.png "The startup screen")
+![The startup screen]({{ site.baseurl }}/assets/images/nostalgia/start.png "The startup screen")
 
 Let's try pressing some buttons:  
-![Buttons pressed]({{ site.baseurl }}/images/nostalgia/buttons.gif "Buttons pressed")  
+![Buttons pressed]({{ site.baseurl }}/assets/images/nostalgia/buttons.gif "Buttons pressed")  
 Okay the input get printed out to screen. Seems like we need to get the right code (if we had read the instructions we would know that by now).
 
 We can't input anymore than 8 buttons, pressing Start does nothing and Select resets it. We could try to brute force it, but where is the fun in that...
