@@ -23,11 +23,15 @@ To install Genymotion, first install virtualbox with
 sudo apt install virtualbox
 ```
 
-then
+then  
+* Download the .bin from [here](https://www.genymotion.com/download/).
+* Execute that file (it's a bash script; execute as root if you want it in /opt/).
+* Start Genymotion and create a device (any version should suffice)
+* You should now be able to boot into a android device
 
 ### Decompiler
 To de/recompile I'm using apktool. You could use apt to install that, but I had problems with the dirty version.  
-Head over to [the website](https://ibotpeaches.github.io/Apktool/) and follow the install instructions (download wrapper & jar, chmod, run).
+Head over to [the official website](https://ibotpeaches.github.io/Apktool/) and follow the install instructions (download wrapper & jar, chmod, run).
 
 You also need a java version. I'm using openjdk-11, but it's recommended to use jdk-8.
 
@@ -42,7 +46,7 @@ sudo docker pull opensecurity/mobile-security-framework-mobsf
 sudo docker run -p 8000:8000 opensecurity/mobile-security-framework-mobsf
 ```
 
-Also a docker-compose file
+Also a docker-compose file, cause I'm too lazy to save the long ass docker name
 ```
 version: "2.0"
 services:
@@ -55,6 +59,8 @@ It's then reachable on port 8000.
 
 ![MobSF]({{ site.baseurl }}/assets/images/mstg/mobsf.png "MobSF")
 
+### Ghidra
+The ol' trusty decompiler. Needed later...
 
 # Uncrackable Level 1
 Drag-and-drop the apk into our emulator and it should start directly.  
@@ -355,3 +361,67 @@ libfoo.so: ELF 32-bit LSB shared object, Intel 80386, version 1 (SYSV), dynamica
 ```
 
 A fuck, ~~I can't believe you've done this~~ it's stripped.
+
+After I read the section of reversing native code in the MSTG, I know that it still has symbols (which makes sense, cause it's a library). You can read those with readelf(linux)/greadelf (mac).
+
+```
+readelf -W -s libfoo.so
+
+Symbol table '.dynsym' contains 17 entries:
+   Num:    Value  Size Type    Bind   Vis      Ndx Name
+     0: 00000000     0 NOTYPE  LOCAL  DEFAULT  UND
+     1: 00000000     0 FUNC    GLOBAL DEFAULT  UND waitpid@LIBC (2)
+     2: 00000000     0 FUNC    GLOBAL DEFAULT  UND __cxa_atexit@LIBC (2)
+     3: 00000000     0 FUNC    GLOBAL DEFAULT  UND __cxa_finalize@LIBC (2)
+     4: 00000000     0 FUNC    GLOBAL DEFAULT  UND __stack_chk_fail@LIBC (2)
+     5: 00000000     0 FUNC    GLOBAL DEFAULT  UND fork@LIBC (2)
+     6: 00000000     0 FUNC    GLOBAL DEFAULT  UND getppid@LIBC (2)
+     7: 00000f60   199 FUNC    GLOBAL DEFAULT   12 Java_sg_vantagepoint_uncrackable2_CodeCheck_bar
+     8: 00000000     0 FUNC    GLOBAL DEFAULT  UND _exit@LIBC (2)
+     9: 00000f30    40 FUNC    GLOBAL DEFAULT   12 Java_sg_vantagepoint_uncrackable2_MainActivity_init
+    10: 00000000     0 FUNC    GLOBAL DEFAULT  UND ptrace@LIBC (2)
+    11: 00000000     0 FUNC    GLOBAL DEFAULT  UND strncmp@LIBC (2)
+    12: 00000000     0 FUNC    GLOBAL DEFAULT  UND pthread_create@LIBC (2)
+    13: 00000000     0 FUNC    GLOBAL DEFAULT  UND pthread_exit@LIBC (2)
+    14: 00004004     0 NOTYPE  GLOBAL DEFAULT  ABS __bss_start
+    15: 00004009     0 NOTYPE  GLOBAL DEFAULT  ABS _end
+    16: 00004004     0 NOTYPE  GLOBAL DEFAULT  ABS _edata
+```
+
+So let's put it in Ghidra and go to the interesting functions (CodeCheck_bar & MainActivity_init). I'm using the x86 lib here (but it shouldn't make any difference if your tool supports that arch).
+
+CodeCheck_bar:
+```
+Java_sg_vantagepoint_uncrackable2_CodeCheck_bar(int *param_1,undefined4 param_2,undefined4 param_3)
+{
+  ...
+  if (DAT_00014008 == '\x01') {
+    local_30 = 0x6e616854;
+    local_2c = 0x6620736b;
+    local_28 = 0x6120726f;
+    local_24 = 0x74206c6c;
+    local_20 = 0x6568;
+    local_1e = 0x73696620;
+    local_1a = 0x68;
+    __s1 = (char *)(**(code **)(*param_1 + 0x2e0))(param_1,param_3,0);
+    iVar1 = (**(code **)(*param_1 + 0x2ac))(param_1,param_3);
+    if (iVar1 == 0x17) {
+      iVar1 = strncmp(__s1,(char *)&local_30,0x17);
+      if (iVar1 == 0) {
+        uVar2 = 1;
+  ...
+}
+```
+
+Three parameters? The java code only puts in a byte array.  
+Seems like it strncmp some hex values with `_sl`. Is that our input? Does it get transformed?  
+Let's first convert those hex values into a string (Ghidra: In asm window > right click on hex > Convert > Char Sequence) and have a look if those make any sense. 
+
+![Converted String]({{ site.baseurl }}/assets/images/mstg/lvl2-string.png "Converted String")
+
+So long and "Thanks for all the fish"?  
+Was that already the secret? Let's put it in the app:
+
+![Level 2 Success]({{ site.baseurl }}/assets/images/mstg/lvl2-success.png "Level 2 Success")
+
+Okay... That worked? No encryption or encoding? Interesting...
