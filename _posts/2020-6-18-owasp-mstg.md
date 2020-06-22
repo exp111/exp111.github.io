@@ -63,6 +63,8 @@ It's then reachable on port 8000.
 The ol' trusty decompiler. Needed later...
 
 # Uncrackable Level 1
+> This app holds a secret inside. Can you find it?
+
 Drag-and-drop the apk into our emulator and it should start directly.  
 We immediately get prompted with this message:
 
@@ -281,6 +283,8 @@ and then your desired adb command (ex. adb shell).
 Notice: the IP Address is not the one in the Genymotion window name. Get it through Settings > System > About Phone or Settings > Network > Wi-Fi > The Wifi > Advanced > IP address.
 
 # Uncrackable Level 2
+> This app holds a secret inside. May include traces of native code.
+
 Same layout, can't start in genymotion (because of superuser)
 Again Root & Debugable Detection + Debugger Check in MainActivity.onCreate => remove, recompile with
 
@@ -425,3 +429,234 @@ Was that already the secret? Let's put it in the app:
 ![Level 2 Success]({{ site.baseurl }}/assets/images/mstg/lvl2-success.png "Level 2 Success")
 
 Okay... That worked? No encryption or encoding? Interesting...
+
+# Uncrackable Level 3
+> The crackme from hell!
+
+First look into the code in MobSF:
+* a xorKey "pizzapizzapizzapizzapizz"
+* Native Function again from libfoo.so: baz, init(byte[]), bar(byte[])
+* It uses an crc checksum of libs & classes.dex in verifyLibs() to check for tampering
+
+Order of Functions:  
+onCreate():
+* verifyLibs()
+* init(xorkey)
+* Debugger Detection
+* Root Detection
+* Creates CodeCheck object
+
+Verify():
+* Calls check.check_code(input)
+
+check_code(str):
+* bar(str.getBytes()) => native func
+
+What to patch:
+* verifyLibs call
+* Debugger Detection
+* Root Detection
+
+To decompile
+```
+apktool d UnCrackable-Level3.apk
+```
+
+Patching out:
+In onCreate I found this `.line X` marker. A quick google showed that those numbers are used for debugging. When something goes wrong it can show the java line code.  
+So we're safe to delete those.
+
+I patched out in onCreate:
+```
+.method protected onCreate(Landroid/os/Bundle;)V
+    .registers 6
+
+    .line 104
+    invoke-direct {p0}, Lsg/vantagepoint/uncrackable3/MainActivity;->verifyLibs()V
+    const-string v0, "pizzapizzapizzapizz"
+    .line 106
+    invoke-virtual {v0}, Ljava/lang/String;->getBytes()[B
+    move-result-object v0
+    invoke-direct {p0, v0}, Lsg/vantagepoint/uncrackable3/MainActivity;->init([B)V
+    .line 109 
+    new-instance v0, Lsg/vantagepoint/uncrackable3/MainActivity$2;
+
+    ...
+    
+    .line 130
+    :cond_46
+    new-instance v0, Lsg/vantagepoint/uncrackable3/CodeCheck;
+    ...
+```
+The verifyLibs call, leave the const and the init call there, and basically everything from there till the CodeCheck call.
+
+
+The ol' razzle dazzle:
+```
+apktool b UnCrackable-Level3
+cd UnCrackable-Level3/dist/
+apksigner sign --ks ~/.android/debug.keystore --ks-key-alias signkey UnCrackable-Level3.apk
+```
+
+If we've done it right, it should now be able to start and accept any string on our emulator.
+
+What to check in native lib:
+* MainActivity::init => what does it do with the xorkey? set it and in bar xors?
+* MainActvity::baz => not really necessary; should return classes.dex checksum; maybe sets though
+* CodeCheck::bar => get key; maybe xor it
+
+MainActivity_baz:
+```c++
+undefined8 Java_sg_vantagepoint_uncrackable3_MainActivity_baz(void)
+{
+  return 0x18110e3;
+}
+```
+* Only returns checksum. Nice.
+
+MainActivity_init:
+```c++
+void Java_sg_vantagepoint_uncrackable3_MainActivity_init
+               (int *param_1,undefined4 param_2,undefined4 param_3)
+{
+  char *__src;
+  
+  FUN_00013250();
+  __src = (char *)(**(code **)(*param_1 + 0x2e0))(param_1,param_3,0);
+  strncpy((char *)&DAT_0001601c,__src,0x18);
+  (**(code **)(*param_1 + 0x300))(param_1,param_3,__src,2);
+  DAT_00016038 = DAT_00016038 + 1;
+  return;
+}
+```
+* FUN_00013250: checks for debugger via ptrace
+* Copies probably the xorkey (also a length of 0x18/24) into 0x1601c
+* 0x16038: checks == 2 in bar => probably a init check
+
+CodeCheck_bar:
+```c++
+undefined4
+Java_sg_vantagepoint_uncrackable3_CodeCheck_bar(int *param_1,undefined4 param_2,undefined4 param_3)
+{
+    ...
+    if (isInited == 2) {
+        FUN_00010fa0(&local_40);
+        input = (**(code **)(*param_1 + 0x2e0))(param_1,param_3,0);
+        inputLength = (**(code **)(*param_1 + 0x2ac))(param_1,param_3);
+        if (inputLength == 0x18) {
+            uVar1 = 0;
+            puVar3 = &xorkey;
+            do {
+                if (*(byte *)(input + uVar1) != (*(byte *)puVar3 ^ *(byte *)((int)&local_40 + uVar1)))
+                    goto LAB_00013456;
+                uVar1 = uVar1 + 1;
+                puVar3 = (undefined4 *)((int)puVar3 + 1);
+            } while (uVar1 < 0x18);
+            uVar2 = CONCAT31((int3)(uVar1 >> 8),1);
+            if (uVar1 == 0x18) goto LAB_00013458;
+        }
+    }
+  ...
+}
+```
+* Gets a string from 0x10fa0
+* Xors that with the key, byte-for-byte, and compares with the input
+
+Some things
+* Input has the same length as the xorkey and the xored bytes (0x18)
+
+FUN_00010fa0:
+```c++
+void FUN_00010fa0(undefined4 *param_1)
+{
+  uVar4 = DAT_00016004 * 0x41c64e6d + 0x3039;
+  DAT_00016004 = uVar4;
+  puVar2 = (uint *)malloc(8);
+  if (puVar2 != (uint *)0x0) {
+    *puVar2 = uVar4 & 0x7fffffff;
+    ppuVar3 = (uint **)&_1_sub_doit__opaque_list1_1;
+    if (_1_sub_doit__opaque_list1_1 == (uint *)0x0) {
+      *(uint **)(puVar2 + 1) = puVar2;
+    }
+    else {
+      ppuVar3 = (uint **)(_1_sub_doit__opaque_list1_1 + 1);
+      puVar2[1] = _1_sub_doit__opaque_list1_1[1];
+    }
+    *ppuVar3 = puVar2;
+  }
+  ...
+```
+
+That's confusing? It's a really long function too (1500 loc)...  
+If we take a look at the end we see this though:
+```c++
+  if (_1_sub_doit__opaque_list1_1 != (uint *)0x0) {
+    param_1[1] = 0;
+    *param_1 = 0;
+    param_1[3] = 0;
+    param_1[2] = 0;
+    *(undefined *)(param_1 + 6) = 0;
+    *param_1 = 0x1311081d;
+    param_1[1] = 0x1549170f;
+    param_1[2] = 0x1903000d;
+    param_1[3] = 0x15131d5a;
+    param_1[4] = 0x5a0e08;
+    param_1[5] = 0x14130817;
+  }
+```
+
+That looks more interesting... Don't forget the 0x00.
+
+If we put that into CyberChef we get: cxrgt9~ucbpdoi|*3trucamz  
+Not a nice flag. Input that into the emulator and it fails...
+
+I searched a bit around, looked in the other libs, weirdly enough for x86_64 the last bytes are reversed...
+
+### Parameters found
+I also found this in main:
+```c++
+undefined8 main(undefined4 param_1,undefined8 param_2,undefined8 param_3)
+{
+  _global_argc = param_1;
+  _global_envp = param_3;
+  _global_argv = param_2;
+  return 0;
+}
+```
+
+Maybe all lib functions have this scheme?
+
+### The Solution
+Okay I'm retarded?  
+
+Okay if we look at this:
+```
+*param_1 = 0x1311081d;
+std::cout << std::hex << param_1[i] << std::endl;
+```
+We get like we would expect `0x1311081d`.  
+But because we're little endian, in memory the address will look like this: 0x1d081113.  
+And if we ask c++ to transform that into a byte it will give us 0x1d.  
+But if we just copy the hex string out (which is reversed) and xor it with a string (which is in the right order) it of course won't work.
+
+But the question is, how did not notice that until now? I mean I often use the Ghidra Convert function, but I also copied xored bytes out with no problem? Maybe because the key was also inverted? Fuckin hell, I have no clue. At least now I know it.
+
+Okay so the solution: Take those bytes, reverse them, then concat them and xor.
+The key: make owasp great again
+
+### Debugging
+While I haven't used it it's pretty useful.
+```
+adb connect <IP>
+adb shell
+    ps -A (the -A shows all processes; only needed for >=Android 8) | grep uncrackable
+    gdbserver :<PORT> --attach <PID>
+gdb
+target remote <IP>:<PORT>
+```
+
+And it should load all the libs and such.
+You could also port forward to your system with
+```
+adb forward tcp:<LOCAL PORT> tcp:<REMOTE PORT>
+```
