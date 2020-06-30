@@ -14,7 +14,7 @@ mode: dark
 
 # Includes an icon in the footer for each username you enter
 footer-links:
-  github: exp111/
+  github: https://github.com/exp111/
 
 
 # Your website URL (e.g. http://barryclark.github.io or http://www.barryclark.co)
