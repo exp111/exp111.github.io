@@ -1,7 +1,7 @@
 ---
 layout: post
 title: OWASP MSTG
-categories: reversing mobile
+categories: reversing mobile android
 tags: mobile-security-testing-guide
 ---
 
@@ -636,7 +636,7 @@ std::cout << std::hex << param_1[i] << std::endl;
 ```
 We get like we would expect `0x1311081d`.  
 But because we're little endian, in memory the address will look like this: 0x1d081113.  
-And if we ask c++ to transform that into a byte it will give us 0x1d.  
+And if we ask c++ to transform that into a byte it will give us 0x1d (because it prints the first byte).  
 But if we just copy the hex string out (which is reversed) and xor it with a string (which is in the right order) it of course won't work.
 
 But the question is, how did not notice that until now? I mean I often use the Ghidra Convert function, but I also copied xored bytes out with no problem? Maybe because the key was also inverted? Fuckin hell, I have no clue. At least now I know it.
@@ -649,7 +649,7 @@ While I haven't used it it's pretty useful.
 ```
 adb connect <IP>
 adb shell
-    ps -A (the -A shows all processes; only needed for >=Android 8) | grep uncrackable
+    ps -A (the -A shows all processes; only needed for >=Android 8) | grep <APP>
     gdbserver :<PORT> --attach <PID>
 gdb
 target remote <IP>:<PORT>
