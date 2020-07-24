@@ -50,7 +50,8 @@ If we now make a web request (like browse to google.com), burp should catch the 
 You also need to import the burp certificate: 
 1. Export the certificate in Proxy > Options > Import / Export > Certificate in DER Format
 2. Drag-and-drop the .crt file
-3. Settings > Wi-Fi > Dots in the top right corner > Advanced > Install Certificates || Settings > Security > Install from SD Card
+3. Settings > Wi-Fi > Dots in the top right corner > Advanced > Install Certificates 
+3. OR Settings > Security > Install from SD Card
 4. Select the file from Android > Download
 
 You may need to set a pin/password/pattern
