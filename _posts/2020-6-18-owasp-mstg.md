@@ -660,3 +660,122 @@ You could also port forward to your system with
 ```
 adb forward tcp:<LOCAL PORT> tcp:<REMOTE PORT>
 ```
+
+# Android License Validator
+> A brand new Android app sparks your interest. Of course, you are planning to purchase a license for the app eventually, but you'd still appreciate a test run before shelling out $1. Unfortunately no keygen is available!
+
+Run `file` over it:
+```
+file validate
+validate: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, stripped
+```
+
+Mhh it's a ARM binary, stripped.  
+Okay let's open it up in Ghidra.
+
+We have a few symbols like free, entry, exit and `__libc_init`.  
+Through the init function, we can find the main (the 3rd parameter) at `0x00011874`.
+
+```c++
+undefined4 main(int argc,int argv)
+{
+  size_t length;
+  undefined4 len;
+  undefined decoded [16];
+  
+  if (argc != 2) {
+    PrintUsage();
+  }
+  length = strlen(*(char **)(argv + 4));
+  if (length != 0x10) {
+    ExitWrongFormat();
+  }
+  puts("Entering base32_decode");
+  base32_decode(0,*(undefined4 *)(argv + 4),0x10,decoded,&len);
+  printf("Outlen = %d\n",len);
+  puts("Entering check_license");
+  check_license(decoded);
+  return 0;
+}
+```
+
+Okay so it:
+* Takes the first parameter as the key
+* Checks for length 0x10/16
+* Base32 decodes it
+* Then checks the decoded key
+
+If we have a 16 char long encoded string, the decoded key is 6-10 chars long (with padding).
+
+The `check_license`:
+```c++
+void check_license(byte *key)
+{
+  uint uVar1;
+  byte local_20 [8];
+  int local_18;
+  byte *local_14;
+  
+  local_18 = 0;
+  local_14 = key;
+  while (local_18 < 5) {
+    local_20[local_18] = *local_14 ^ local_14[1];
+    local_14 = local_14 + 2;
+    local_18 = local_18 + 1;
+  }
+  uVar1 = 0x4C();
+  if (((((uint)local_20[0] == uVar1) && (uVar1 = 0x4F(), (uint)local_20[1] == uVar1)) &&
+      (uVar1 = 0x4C(), (uint)local_20[2] == uVar1)) &&
+     ((uVar1 = 0x5a(), (uint)local_20[3] == uVar1 && (uVar1 = 0x21(), (uint)local_20[4] == uVar1))))
+  {
+    puts("Product activation passed. Congratulations!");
+  }
+  else {
+    puts("Incorrect serial.");
+  }
+  return;
+}
+```
+* Key gets xored in pairs (so char 0 ^ 1, char 2 ^ 3, ...)
+* Then the xored chars get compared to set values
+
+Here is my python (pseudo?) code:
+```python
+def check(key):
+    xored = []
+    for i in range(0, 5):
+        j = i*2
+        xored[i] = key[j] ^ key[j + 1]
+
+    if xored[0] == 0x4c and
+        xored[1] == 0x4f and
+        xored[2] == 0x4c and
+        xored[3] == 0x5a and
+        xored[4] == 0x21:
+        print("ye")
+    else:
+        print("neh")
+```
+
+The key gets reduced in the end to five set chars, which ends up in the string `LOLZ!`.
+
+To now write a keygen, we need to find 5 pairs of chars, which get xor'ed to the respective char in the "final key". We could do only 'a', but I decided to make it random:
+```python
+import random, string, base64
+def genChar():
+    return random.choice(string.ascii_letters)
+
+def keyGen():
+    xored = "LOLZ!"
+    newKey = ""
+    for c in xored:
+        char = genChar()
+        newKey += char
+        newKey += chr(ord(char) ^ ord(c))
+    print(f"Decoded: {newKey}")
+    key = base64.b32encode(newKey.encode())
+    print(f"Key: {key}")
+    print(f"Key Length: {len(key)}")
+
+keyGen()
+```
