@@ -9,6 +9,7 @@ tags: genymotion
 We need a few tools:
 * Burpsuite
 * Genymotion
+* Genymotion ARM Translation
 * Xposed
 * SSLUnpinning
 
@@ -32,6 +33,8 @@ Then download the xposed_X.zip from [here](https://dl-xda.xposed.info/framework/
 4. Drag-and-drop the apk onto the window
 5. Open the installer. If it shows "Xposed is installed but not active", reboot your device again. If it still doesn't work, no clue. Google. Probably.
 
+You can probably use the Xposed installer too.
+
 ## SSLUnpinning
 We may need this if our app uses [SSL Pinning](https://owasp.org/www-community/controls/Certificate_and_Public_Key_Pinning). To install:
 
@@ -49,9 +52,47 @@ If we now make a web request (like browse to google.com), burp should catch the 
 
 You also need to import the burp certificate: 
 1. Export the certificate in Proxy > Options > Import / Export > Certificate in DER Format
-2. Drag-and-drop the .crt file
+2. Drag-and-drop the .cer file
 3. Settings > Wi-Fi > Dots in the top right corner > Advanced > Install Certificates 
 3. OR Settings > Security > Install from SD Card
 4. Select the file from Android > Download
 
 You may need to set a pin/password/pattern
+
+If you're on Android 7.0+ ([Source](https://blog.ropnop.com/configuring-burp-suite-with-android-nougat/#tldr-cheatsheet)):
+```
+# Convert DER to PEM
+openssl x509 -inform DER -in cacert.der -out cacert.pem
+
+# Get subject_hash_old (or subject_hash if OpenSSL < 1.0)
+openssl x509 -inform PEM -subject_hash_old -in cacert.pem |head -1
+
+# Rename cacert.pem to <hash>.0
+mv cacert.pem 9a5ba575.0
+
+# Remount and copy cert to device
+adb root
+adb remount
+adb push 9a5ba575.0 /sdcard/
+adb shell
+vbox86p:/ # mv /sdcard/9a5ba575.0 /system/etc/security/cacerts/
+vbox86p:/ # chmod 644 /system/etc/security/cacerts/9a5ba575.0
+vbox86p:/ # reboot
+```
+
+# A case of Windows
+So apparently the Windows 10 2004 update destroyed all drivers and more importantly for me:  
+All my genymotion virtual devices won't start anymore. The good thing about Genymotion is that the error handling is extrordinary ("Unable to start Genymotion Virtual Device.").
+
+We can create logs though and looking through it, I found that the "VirtualBox Host-only Adapter #3" wasn't found. A look into the network settings showed that there only was #1, #2 and #4.
+
+Okay I tried:
+* Creating a new host-only adapter, it may fill in the #3: nope #5
+* Delete all adapters and recreate: #1, #2, #4
+* Delete all virtual machines: Still doesn't work
+
+The solution:
+* Open the .vbox in VirtualBox
+* Change the network settings to use another adapter
+
+This may work, but the update fried all machines and made new ones slow af and not working properly. I just reinstalled VirtualBox and Genymotion...

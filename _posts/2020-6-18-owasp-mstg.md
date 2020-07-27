@@ -661,7 +661,7 @@ You could also port forward to your system with
 adb forward tcp:<LOCAL PORT> tcp:<REMOTE PORT>
 ```
 
-# Android License Validator
+# [Android License Validator](https://github.com/OWASP/owasp-mstg/tree/master/Crackmes/Android/License_01)
 > A brand new Android app sparks your interest. Of course, you are planning to purchase a license for the app eventually, but you'd still appreciate a test run before shelling out $1. Unfortunately no keygen is available!
 
 Run `file` over it:
@@ -778,4 +778,19 @@ def keyGen():
     print(f"Key Length: {len(key)}")
 
 keyGen()
+```
+
+To test it (you may need Genymotion ARM translation, if you're using Genymotion):
+```
+> .\adb connect <IP>:5555
+> .\adb push ..\validate /data/local/tmp
+..\validate: 1 file pushed, 0 skipped. 19.6 MB/s (9364 bytes in 0.000s)
+> .\adb shell chmod 755 /data/local/tmp/validate
+> .\adb shell /data/local/tmp/validate
+Usage: ./validate <serial>
+> .\adb shell /data/local/tmp/validate MIXGGLCQDR3CYRLE
+Entering base32_decode
+Outlen = 10
+Entering check_license
+Product activation passed. Congratulations!
 ```
