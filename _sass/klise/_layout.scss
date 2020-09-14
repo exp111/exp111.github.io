@@ -77,12 +77,7 @@
     line-height: $base-line-height + 0.4;
     text-decoration: none;
     padding: 5px 8px;
-    opacity: 0.7;
     letter-spacing: 0.3px;
-
-    &:hover {
-      opacity: 1;
-    }
 
     &:not(:last-child) {
       margin-right: 5px;
